@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stackline · AI agent design in motion</title>
+<meta name="description" content="Stackline: learn AI agent system design (tool use, RAG, multi-agent, MCP, guardrails, durable execution) through animated diagrams.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@700;800&family=Red+Hat+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-track="agents">
+<header class="hero band"><div class="wrap">
+  <div class="topbar"><a class="brand" href="./"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect x="3" y="4" width="24" height="6" rx="3" fill="#8c9bff"/><rect x="3" y="12" width="24" height="6" rx="3" fill="#4fc1c6"/><rect x="3" y="20" width="24" height="6" rx="3" fill="#f7e463"/></svg>Stackline</a><nav class="tracks" aria-label="Tracks"><a href="./">System design</a><a aria-current="page" href="agents.html">AI agent design</a></nav></div>
+  <div class="hero-top">
+    <div><h1>Agent design, in motion</h1></div>
+    <div><p>How production AI agents are actually built: the tool-use loop, retrieval, multi-agent orchestration, safe tool access, guardrails and durable state. Each one animated as a running system, with real-world examples and interview tips.</p>
+    <div class="legend"><span><i style="background:var(--q)"></i>Request</span><span><i style="background:var(--ok)"></i>Success / response</span><span><i style="background:var(--w)"></i>State / approval / warning</span><span><i style="background:var(--x)"></i>Failure / blocked</span></div></div>
+  </div>
+  <div class="figc" id="hero-fig"></div>
+</div></header>
+
+<nav class="topics" aria-label="Topics"><div class="scroll" id="nav"></div></nav>
+
+<main id="main"></main>
+
+<section class="band" id="patterns" style="background:var(--bg2);border-top:1px solid var(--line)"><div class="wrap">
+  <h2>Familiar patterns, agent edition</h2>
+  <p class="mut" style="max-width:72ch;margin-top:12px;font-size:17px">An agent is still a distributed system. These classic patterns from the system design track show up in every serious agent platform. Each name links to its animation.</p>
+  <table class="stack"><thead><tr><th>Classic pattern</th><th>How it applies to agents</th></tr></thead><tbody><tr><td><a href="./#message-queue">Message queue</a></td><td>Task queues for agent jobs; idempotent workers, because a step may run twice.</td></tr><tr><td><a href="./#payments">Idempotency keys</a></td><td>Every side-effecting tool call carries a key, so a replayed step can’t refund or email twice.</td></tr><tr><td><a href="./#circuit-breaker">Circuit breaker</a></td><td>Fall back to another model or provider when one is failing or timing out.</td></tr><tr><td><a href="./#retries-backoff">Retries with backoff</a></td><td>Model APIs return rate-limit and overload errors; retry with jitter and a cap.</td></tr><tr><td><a href="./#rate-limiting">Rate limiting</a></td><td>Per-user and per-agent token and cost budgets, not just requests per second.</td></tr><tr><td><a href="./#caching">Caching</a></td><td>Cache tool results and embeddings; many providers also offer prompt caching for repeated context.</td></tr><tr><td><a href="./#saga">Saga</a></td><td>Multi-step agent actions need compensations when a later step fails.</td></tr><tr><td><a href="./#bulkhead">Bulkhead</a></td><td>Separate concurrency limits per tool, so one slow API can’t stall every agent.</td></tr></tbody></table>
+</div></section>
+
+<section class="band" id="cheatsheet"><div class="wrap">
+  <h2>Quick pick: agent problems and fixes</h2>
+  <p class="mut" style="margin-top:12px">A one-screen revision sheet. Each row links to its animation.</p>
+  <table class="stack"><thead><tr><th>When you see this problem…</th><th>Reach for</th><th>Watch out for</th></tr></thead><tbody id="pick"></tbody></table>
+</div></section>
+
+<footer class="band"><div class="wrap">
+  <p><strong style="color:var(--ink)">Stackline</strong> · learn system design by watching it run. <a href="./">System design track</a></p>
+  <p>The diagrams are simplified teaching models. Agent frameworks, protocols and model APIs change quickly, so check current documentation before relying on specifics.</p>
+</div></footer>
+
+<script src="app.js"></script>
+</body></html>
