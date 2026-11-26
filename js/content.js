@@ -1,12 +1,3 @@
-{
-const C={q:'#8c9bff',ok:'#4fc1c6',w:'#f7e463',x:'#ff6a4d'};
-const ST={ok:['#131d45','#3a4a8c'],down:['#3a1420','#e8452c'],hot:['#3a3412','#f7e463'],lead:['#0f3a40','#4fc1c6'],cut:['#e8452c','#e8452c']};
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const P=(p,b,c='q',t='',hop)=>({p:p.split(' '),b,c,t,hop});
-const ring=(a)=>{const r=a*Math.PI/180;return[360+140*Math.cos(r),190+140*Math.sin(r)]};
-const arc=(a1,a2)=>{const[x1,y1]=ring(a1),[x2,y2]=ring(a2);return`M${x1.toFixed(1)} ${y1.toFixed(1)} A140 140 0 ${a2-a1>180?1:0} 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`};
-const rp=a=>ring(a).map(v=>Math.round(v));
-
 const HERO={id:'hero',L:9,hop:.6,nodes:[['u',70,190,'Users'],['cdn',230,70,'CDN','edge cache'],['lb',250,265,'Load balancer'],['a1',440,150,'App server'],['a2',440,300,'App server'],['ca',625,60,'Cache','Redis'],['db',625,190,'Database','','db'],['q',625,320,'Queue','jobs']],
 edges:[['u','cdn'],['u','lb'],['lb','a1'],['lb','a2'],['a1','ca'],['a1','db'],['a2','db'],['a2','q']],
 pk:[P('u cdn u',.2,'ok','image'),P('u lb a1 ca a1 lb u',.7),P('u lb a2 db a2 lb u',2.0),P('a2 q',3.4,'w','email job'),P('u cdn u',4.6,'ok','js'),P('u lb a1 db a1 lb u',5.0)],
@@ -342,7 +333,7 @@ fl:[[110,50,'crashed',4.0,8.4,'x'],[330,250,'steps 1–2 saved',3.8,5.2,'w']],
 steps:[[0,'Worker 1 runs the task one step at a time.'],[1.4,'After each step it saves a checkpoint.'],[4.0,'Worker 1 crashes mid-task.'],[4.8,'Worker 2 picks the task up from the last checkpoint, with no repeated work.'],[6.8,'Useful facts are written to long-term memory for future sessions.'],[7.4,'The task completes and its final state is saved.']]},
 
 /* ---------- RESILIENCE ---------- */
-{id:'circuit-breaker',g:'resil',t:'Circuit breaker',L:11,
+{id:'circuit-breaker',g:'resil',t:'Circuit breaker',L:12.2,
 lede:'Wrap calls to a dependency. When it keeps failing, stop calling it for a while and fail fast, giving it room to recover instead of piling on.',
 ideas:['Closed: calls pass through while failures are counted.','Open: calls fail immediately (return a fallback, cached data or a friendly error).','Half-open: after a cool-down, let a trial call through; success closes the circuit.','Combine with timeouts. A breaker without timeouts still lets threads hang.'],
 real:'Netflix Hystrix popularised the pattern (now in maintenance); today Resilience4j, Polly (.NET) and service meshes such as Envoy/Istio provide it.',
@@ -353,7 +344,7 @@ nodes:[['svc',95,190,'Order service'],['cb',345,190,'Circuit breaker'],['pay',59
 edges:[['svc','cb'],['cb','pay']],
 pk:[P('svc cb pay cb svc',.2,'ok'),P('svc cb pay cb svc',1.4,'x'),P('svc cb pay cb svc',2.0,'x'),P('svc cb svc',4.2,'x','fail fast'),P('svc cb svc',5.0,'x','fail fast'),P('svc cb svc',5.8,'x','fail fast'),P('svc cb pay cb svc',7.6,'w','trial'),P('svc cb pay cb svc',9.6,'ok')],
 st:{pay:[[2.0,'down'],[7.2,'ok']],cb:[[3.8,'down'],[7.6,'hot'],[9.4,'lead']]},
-fl:[[345,120,'CLOSED',0,3.8,'ok'],[345,120,'OPEN',3.8,7.6,'x'],[345,120,'HALF-OPEN',7.6,9.4,'w'],[345,120,'CLOSED',9.4,11,'ok'],[95,260,'fallback response',4.6,7.2,'w'],[590,260,'timing out',2.0,7.2,'x']],
+fl:[[345,120,'CLOSED',0,3.8,'ok'],[345,120,'OPEN',3.8,7.6,'x'],[345,120,'HALF-OPEN',7.6,9.4,'w'],[345,120,'CLOSED',9.4,12.2,'ok'],[95,260,'fallback response',4.6,7.2,'w'],[590,260,'timing out',2.0,7.2,'x']],
 steps:[[0,'Closed: calls flow through normally while the breaker counts failures.'],[1.4,'The payment API starts failing and timing out.'],[3.8,'Failures cross the threshold, and the breaker trips to Open.'],[4.2,'While open, calls fail instantly with a fallback instead of piling up on a dead service.'],[7.6,'After a cool-down, Half-open lets one trial request through.'],[9.4,'It succeeds, so the breaker closes and normal traffic resumes.']]},
 
 {id:'retries-backoff',g:'resil',t:'Retries with backoff & jitter',L:9.5,
@@ -397,153 +388,3 @@ pk:[P('or ord or',.2,'q','create'),P('or pay or',1.6,'q','charge'),P('or inv or'
 fl:[[600,55,'PENDING',.8,6.6,'q'],[600,55,'CANCELLED',6.6,9,'x'],[600,145,'charged',2.2,5.2,'ok'],[600,145,'refunded',5.2,9,'w'],[600,235,'out of stock',3.6,9,'x'],[600,325,'never called',4.0,9,'q']],
 steps:[[0,'An order spans several services, each with its own database, so there’s no single ACID transaction.'],[.2,'Step 1: create the order (pending).'],[1.6,'Step 2: charge the payment.'],[3.0,'Step 3: reserve stock, which fails.'],[4.6,'The orchestrator runs compensating actions in reverse: refund the payment…'],[6.0,'…then cancel the order. The system ends consistent without a distributed lock.']]}
 ];
-
-/* ---------- engine ---------- */
-function build(s){
-  const L=s.L, hop=s.hop||.6, N={};
-  const kt=v=>Math.min(Math.max(v/L,0),1).toFixed(4);
-  for(const n of s.nodes){const[id,x,y,l,sub='',shape='']=n;N[id]={id,x,y,l,sub,shape,w:Math.max(92,l.length*9.2+28,sub.length*7+26),h:sub?58:46}}
-  const disc=(attr,list,init)=>{let a=[...list];if(!a.length||a[0][0]>0)a.unshift([0,init]);return`<animate attributeName="${attr}" dur="${L}s" repeatCount="indefinite" calcMode="discrete" keyTimes="${a.map(v=>kt(v[0])).join(';')}" values="${a.map(v=>v[1]).join(';')}"/>`};
-  const vis=(t0,t1)=>{if(t0<=0&&t1>=L)return'';if(t0<=0)return`<animate attributeName="opacity" dur="${L}s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;${kt(t1)}" values="1;0"/>`;if(t1>=L)return`<animate attributeName="opacity" dur="${L}s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;${kt(t0)}" values="0;1"/>`;return`<animate attributeName="opacity" dur="${L}s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;${kt(t0)};${kt(t1)}" values="0;1;0"/>`};
-  let o=`<svg viewBox="0 0 720 380" role="img" aria-label="${esc(s.t)} animation"><defs><filter id="gl-${s.id}" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="3"/></filter></defs>`;
-  o+=s.extra||'';
-  for(const[a,b]of s.edges){const A=N[a],B=N[b],k=a+'-'+b,cut=(s.cuts||{})[k];
-    o+=`<line class="edge" x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}">${cut?disc('stroke',cut.map(([t,v])=>[t,v==='cut'?'#e8452c':'#33427e']),'#33427e'):''}</line>`}
-  for(const p of s.pk||[]){
-    let d,times,pts;
-    if(p.d){d=p.d;const e=p.b+p.dur;times=[0,p.b,e,L];pts=[0,0,1,1]}
-    else{const v=p.p.map(id=>[N[id].x,N[id].y]);d='M'+v.map(q=>q.join(' ')).join(' L');let cum=[0];for(let i=1;i<v.length;i++)cum.push(cum[i-1]+Math.hypot(v[i][0]-v[i-1][0],v[i][1]-v[i-1][1]));const tot=cum[cum.length-1]||1,h=p.hop||hop;times=[0,p.b];pts=[0,0];cum.forEach((c,i)=>{if(i){times.push(p.b+i*h);pts.push(c/tot)}});times.push(L);pts.push(1)}
-    const e=times[times.length-2],col=C[p.c]||C.q;
-    o+=`<g opacity="0"><circle r="11" fill="${col}" opacity=".45" filter="url(#gl-${s.id})"/><circle r="6.5" fill="${col}"/>${p.t?`<text y="-14" text-anchor="middle" font-size="12.5" font-weight="700" fill="${col}">${esc(p.t)}</text>`:''}<animateMotion dur="${L}s" repeatCount="indefinite" calcMode="linear" path="${d}" keyTimes="${times.map(kt).join(';')}" keyPoints="${pts.map(v=>v.toFixed(4)).join(';')}"/>${vis(p.b,e)}</g>`}
-  for(const n of Object.values(N)){
-    const{x,y,w,h,l,sub,shape}=n,st=(s.st||{})[n.id],first=st&&st[0][0]===0?st[0][1]:'ok';
-    const anim=st?disc('fill',st.map(([t,v])=>[t,ST[v][0]]),ST.ok[0])+disc('stroke',st.map(([t,v])=>[t,ST[v][1]]),ST.ok[1]):'';
-    let body;
-    if(shape==='db'){const t=y-h/2;body=`<path d="M${x-w/2} ${t+8} v${h-12} a${w/2} 8 0 0 0 ${w} 0 v${-(h-12)}"/><ellipse cx="${x}" cy="${t+8}" rx="${w/2}" ry="8"/>`}
-    else body=`<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="12"/>`;
-    const ly=sub?y-2:y+5.5,dy=shape==='db'?4:0;
-    o+=`<g fill="${ST[first][0]}" stroke="${ST[first][1]}" stroke-width="2">${anim}${body}</g><text x="${x}" y="${ly+dy}" text-anchor="middle" font-size="16" font-weight="700" fill="#eef1ff">${esc(l)}</text>${sub?`<text x="${x}" y="${y+17+dy}" text-anchor="middle" font-size="12.5" fill="#a7b1dc">${esc(sub)}</text>`:''}`}
-  for(const[x,y,t,t0,t1,c]of s.fl||[]){const w=t.length*7.6+20;
-    o+=`<g opacity="${t0<=0?1:0}"><rect x="${x-w/2}" y="${y-13}" width="${w}" height="26" rx="13" fill="${C[c]}"/><text x="${x}" y="${y+5}" text-anchor="middle" font-size="13.5" font-weight="700" fill="#0b1433">${esc(t)}</text>${vis(t0,t1)}</g>`}
-  return o+'</svg>'}
-
-const figs=[];
-const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-function mountFig(el,s){
-  el.innerHTML=build(s)+`<div class="ctrl"><button type="button" aria-label="Pause animation">Pause</button><div class="bar"><b></b></div></div><ol class="steps">${s.steps.map(([t,x])=>`<li><button type="button" data-t="${t}">${esc(x)}</button></li>`).join('')}</ol>`;
-  const f={el,s,svg:el.querySelector('svg'),bar:el.querySelector('.bar b'),btn:el.querySelector('.ctrl button'),lis:[...el.querySelectorAll('.steps li')],i:-1,vis:false,user:reduce};
-  f.svg.pauseAnimations();
-  const sync=()=>{f.btn.textContent=f.user?'Play':'Pause';f.btn.classList.toggle('on',f.user);if(f.vis&&!f.user)f.svg.unpauseAnimations();else f.svg.pauseAnimations()};
-  f.sync=sync;f.btn.onclick=()=>{f.user=!f.user;sync()};
-  el.querySelectorAll('.steps button').forEach(b=>b.onclick=()=>{const cur=f.svg.getCurrentTime();f.svg.setCurrentTime(Math.floor(cur/s.L)*s.L+(+b.dataset.t)+.01);paint(f,true)});
-  sync();paint(f,true);figs.push(f);
-}
-function paint(f,force){const t=f.svg.getCurrentTime()%f.s.L;let i=0;f.s.steps.forEach((st,k)=>{if(t>=st[0])i=k});
-  if(i!==f.i||force){f.lis.forEach((l,k)=>l.classList.toggle('on',k===i));f.i=i}f.bar.style.width=(t/f.s.L*100).toFixed(2)+'%'}
-const loop=()=>{for(const f of figs)if(f.vis&&!f.user)paint(f);requestAnimationFrame(loop)};
-
-/* ---------- page ---------- */
-const TRACK=document.body.dataset.track||'core',GR=GROUPS.filter(g=>(g.track||'core')===TRACK);
-const nav=document.getElementById('nav'),main=document.getElementById('main');
-nav.innerHTML=GR.map(g=>`<span>${esc(g.t.split(':')[0])}</span>`+S.filter(s=>s.g===g.id).map(s=>`<a href="#${s.id}">${esc(s.t.replace(/ \(.*\)$/,''))}</a>`).join('')).join('')+(TRACK==='core'?'<span>Practice</span><a href="#estimation">Estimation</a><a href="#labs">Live labs</a><a href="#cheatsheet">Quick pick</a><span>Other track</span><a class="other" href="agents.html">AI agent design →</a>':'<span>Revise</span><a href="#patterns">Familiar patterns</a><a href="#cheatsheet">Quick pick</a><span>Other track</span><a class="other" href="./">System design →</a>');
-main.innerHTML=GR.map(g=>`<section class="ghead band" id="${g.id}"><div class="wrap"><h2>${esc(g.t)}</h2><p>${esc(g.d)}</p></div></section><div class="band" style="padding-block:0">`+S.filter(s=>s.g===g.id).map(s=>`<article class="topic" id="${s.id}">
-  <div class="head"><h3>${esc(s.t)}</h3><p class="lede">${esc(s.lede)}</p></div>
-  <div class="figc" data-s="${s.id}"></div>
-  <div class="body"><h4>Key ideas</h4><ul class="ideas">${s.ideas.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>
-  <dl><div><dt>Where you’ll see it</dt><dd>${esc(s.real)}</dd></div><div><dt>Trade-offs</dt><dd>${esc(s.trade)}</dd></div><div><dt>Interview tip</dt><dd>${esc(s.tip)}</dd></div></dl>
-  <details><summary>Check yourself: ${esc(s.qa[0])}</summary><p>${esc(s.qa[1])}</p></details></div></article>`).join('')+'</div>').join('');
-mountFig(document.getElementById('hero-fig'),TRACK==='agents'?HERO_AG:HERO);
-document.querySelectorAll('.figc[data-s]').forEach(el=>mountFig(el,S.find(s=>s.id===el.dataset.s)));
-const io=new IntersectionObserver(es=>{for(const e of es){const f=figs.find(f=>f.el===e.target);if(f){f.vis=e.isIntersecting;f.sync()}}},{threshold:.15});
-figs.forEach(f=>io.observe(f.el));
-requestAnimationFrame(loop);
-if(location.hash){const t=document.getElementById(location.hash.slice(1));if(t)setTimeout(()=>t.scrollIntoView(),60)}
-
-const PICK=[['One server can’t handle the traffic','load-balancer','Load balancer + stateless app servers','The balancer becoming a single point of failure'],['The same data is read again and again','caching','Cache-aside with TTLs','Stale data, cache stampedes on hot keys'],['Global users, slow images and scripts','cdn','CDN in front of object storage','Purge delays; personalised content can’t be cached'],['Reads overwhelm the database','replication','Read replicas','Replication lag and stale reads'],['Data or writes outgrow one machine','sharding','Sharding by a well-chosen key','Hot shards, cross-shard queries'],['Spiky or slow background work','message-queue','Message queue + idempotent workers','Duplicate delivery, growing consumer lag'],['Replicas may lose contact','cap-theorem','Decide CP vs AP per data type','Errors (CP) or conflicts (AP) during partitions'],['Adding or removing cache/DB nodes','consistent-hashing','Consistent hashing with virtual nodes','Uneven load without virtual nodes'],['Abusive or bursty clients','rate-limiting','Token bucket per key, HTTP 429','Shared counter latency across a fleet'],['Exactly one coordinator needed','leader-election','Leader election via etcd / ZooKeeper (Raft)','Needs a majority; keep clusters small'],['Flaky downstream dependency','circuit-breaker','Circuit breaker + timeout + fallback','Thresholds too sensitive or too lax'],['Transient network errors','retries-backoff','Retries with exponential backoff + jitter','Retry storms; retrying non-idempotent calls'],['One slow dependency freezes everything','bulkhead','Bulkhead: isolated pools per dependency','Pool sizing'],['Nearby search on a map','ride-hailing','Geo index of cells (geohash / H3) in memory','Huge write rate from location updates'],['Huge media files to many viewers','video-streaming','Transcode to segments + CDN + adaptive bitrate','Transcoding and storage cost per rendition'],['Money must move exactly once','payments','Idempotency keys + double-entry ledger','Lost responses and client retries'],['Instant suggestions while typing','typeahead','Trie with top-k per prefix + cache','Stale suggestions; trending queries'],['An LLM must take actions, not just answer','agent-loop','Agent loop with typed tools + stop conditions','Runaway loops and cost'],['Answers must use private, current documents','rag','RAG: retrieve, then generate with sources','Retrieval misses; permission leaks'],['A big task with independent parts','multi-agent','Orchestrator + specialised worker agents','Token cost, compounding errors'],['Agents need many tools safely','mcp-gateway','MCP + gateway with scoped credentials','Prompt injection through tool output'],['Agents taking risky actions','guardrails','Policy checks in code + human approval','Approval fatigue'],['Long-running agent tasks','agent-state','Checkpoints + idempotent tool calls','Replaying side effects after a crash'],['A transaction spans several services','saga','Saga with compensating actions','Visible intermediate states, irreversible steps']];
-const onPage=new Set(S.filter(s=>GR.some(g=>g.id===s.g)).map(s=>s.id));
-document.getElementById('pick').innerHTML=PICK.filter(r=>onPage.has(r[1])).map(([p,id,r,w])=>`<tr><td>${esc(p)}</td><td><a href="#${id}">${esc(r)}</a></td><td class="mut">${esc(w)}</td></tr>`).join('');
-new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true});
-for(const c of document.querySelectorAll('.stack td')){let i=0,p=c;while(p=p.previousElementSibling)i++;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}
-
-/* ---------- labs: run only while visible ---------- */
-if(document.getElementById('lab-lb')){
-const labVis={};
-const labIO=new IntersectionObserver(es=>{for(const e of es)labVis[e.target.id]=e.isIntersecting},{threshold:.1});
-['lab-lb','lab-ch','lab-rl','lab-cb'].forEach(id=>labIO.observe(document.getElementById(id)));
-
-// Load balancer lab
-{const srv=[{n:'Server A',up:true,slow:1},{n:'Server B',up:true,slow:1},{n:'Server C',up:true,slow:2},{n:'Server D',up:true,slow:1}].map(s=>({...s,act:0,tot:0}));
- let rr=0,dropped=0,sent=0,lat=[];
- const box=document.getElementById('lb-srv'),alg=document.getElementById('lb-alg'),stat=document.getElementById('lb-stat');
- box.innerHTML=srv.map((s,i)=>`<div class="sv" id="sv${i}"><b>${s.n}</b><small>${s.slow>1?'2× slower':'normal speed'}</small><div class="meter"><i></i></div><small class="c"></small><button type="button" data-i="${i}">Take down</button></div>`).join('');
- box.querySelectorAll('button').forEach(b=>b.onclick=()=>{const s=srv[b.dataset.i];s.up=!s.up;if(!s.up)s.act=0;draw()});
- function pick(){const up=srv.filter(s=>s.up);if(!up.length)return null;const a=alg.value;
-   if(a==='lc')return up.reduce((m,s)=>s.act<m.act?s:m);
-   if(a==='rnd')return up[Math.floor(Math.random()*up.length)];
-   for(let k=0;k<srv.length;k++){const s=srv[(rr+k)%srv.length];if(s.up){rr=(rr+k+1)%srv.length;return s}}}
- function draw(){srv.forEach((s,i)=>{const el=document.getElementById('sv'+i);el.classList.toggle('down',!s.up);el.querySelector('.meter i').style.width=Math.min(100,s.act/14*100)+'%';el.querySelector('.meter i').style.background=s.act>9?'var(--x)':s.act>5?'var(--w)':'var(--q)';el.querySelector('.c').textContent=s.up?`${s.act} in flight · ${s.tot} served`:'DOWN';el.querySelector('button').textContent=s.up?'Take down':'Bring up'});
-   const avg=lat.length?lat.reduce((a,b)=>a+b,0)/lat.length:0;
-   stat.innerHTML=`<span>Requests <strong>${sent}</strong></span><span>Failed (no healthy server) <strong>${dropped}</strong></span><span>Avg response, last 40 <strong>${(avg/1000).toFixed(2)} s</strong></span>`}
- alg.onchange=()=>{srv.forEach(s=>{s.tot=0});lat=[];sent=0;dropped=0;draw()};
- setInterval(()=>{if(!labVis['lab-lb']||document.hidden)return;sent++;const s=pick();if(!s){dropped++;draw();return}
-   s.act++;s.tot++;const el=document.getElementById('sv'+srv.indexOf(s));el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),150);
-   const dur=(900+Math.random()*700)*s.slow*(1+s.act*.08);
-   setTimeout(()=>{if(s.up&&s.act>0)s.act--;lat.push(dur);if(lat.length>40)lat.shift();draw()},dur);draw()},260);
- draw()}
-
-// Consistent hashing lab
-{const fnv=str=>{let h=2166136261;for(const ch of str){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}h^=h>>>13;h=Math.imul(h,0x5bd1e995);h^=h>>>15;return h>>>0};
- const COLS=['#8c9bff','#4fc1c6','#f7e463','#ff6a4d','#c79bff','#ffa5d8','#9fe3ff','#ffc36b'];
- const keys=Array.from({length:24},(_,i)=>'user:'+(1000+i*37));
- let nodes=['N1','N2','N3'],next=4,vn=false,msg='Add or remove a node to see how many keys move.';
- const svg=document.getElementById('ch-svg'),stat=document.getElementById('ch-stat'),vbtn=document.getElementById('ch-v');
- const ang=k=>fnv(k)/4294967296*360;
- const points=ns=>ns.flatMap(n=>(vn?[0,1,2,3,4]:[0]).map(v=>({n,a:ang(n+'#'+v)}))).sort((a,b)=>a.a-b.a);
- const ownerRing=(k,pts)=>{const a=ang(k);return(pts.find(p=>p.a>=a)||pts[0]).n};
- const ownerMod=(k,ns)=>ns[fnv(k)%ns.length];
- const col=n=>COLS[(+n.slice(1)-1)%COLS.length];
- function draw(){const pts=points(nodes),cx=200,cy=150,r=110,P=(a,rr)=>[cx+rr*Math.cos((a-90)*Math.PI/180),cy+rr*Math.sin((a-90)*Math.PI/180)];
-   let o=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#33427e" stroke-width="3"/>`;
-   for(const k of keys){const[x,y]=P(ang(k),r);o+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${col(ownerRing(k,pts))}"/>`}
-   for(const p of pts){const[x,y]=P(p.a,r),[lx,ly]=P(p.a,r+22);o+=`<rect x="${(x-8).toFixed(1)}" y="${(y-8).toFixed(1)}" width="16" height="16" rx="4" fill="${col(p.n)}" stroke="#0b1433" stroke-width="2"/>`;if(!vn)o+=`<text x="${lx.toFixed(1)}" y="${(ly+5).toFixed(1)}" text-anchor="middle" font-size="14" font-weight="700" fill="${col(p.n)}">${p.n}</text>`}
-   const cnt={};keys.forEach(k=>{const n=ownerRing(k,pts);cnt[n]=(cnt[n]||0)+1});
-   o+=`<text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="15" font-weight="700" fill="#eef1ff">${nodes.length} nodes</text><text x="${cx}" y="${cy+14}" text-anchor="middle" font-size="12.5" fill="#a7b1dc">squares = nodes, dots = keys</text>`;
-   svg.innerHTML=o;
-   stat.innerHTML=`<span>${esc(msg)}</span><span style="flex-basis:100%">Keys per node: ${nodes.map(n=>`<strong style="color:${col(n)}">${n} ${cnt[n]||0}</strong>`).join(' · ')}</span>`}
- function change(newNodes,label){const p0=points(nodes),p1=points(newNodes);
-   const mr=keys.filter(k=>ownerRing(k,p0)!==ownerRing(k,p1)).length,mm=keys.filter(k=>ownerMod(k,nodes)!==ownerMod(k,newNodes)).length;
-   msg=`${label}: consistent hashing moved ${mr} of 24 keys; hash % N would have moved ${mm}.`;nodes=newNodes;draw()}
- document.getElementById('ch-add').onclick=()=>{if(nodes.length>=8)return;const n='N'+next++;change([...nodes,n],'Added '+n)};
- document.getElementById('ch-rem').onclick=()=>{if(nodes.length<=1)return;const n=nodes[Math.floor(nodes.length/2)];change(nodes.filter(x=>x!==n),'Removed '+n)};
- vbtn.onclick=()=>{vn=!vn;vbtn.textContent='Virtual nodes: '+(vn?'on (5 per node)':'off');vbtn.classList.toggle('on',vn);msg=vn?'Each node now owns 5 points on the ring, so the load evens out.':'One point per node: notice how uneven the key counts can be.';draw()};
- draw()}
-
-// Rate limiter lab
-{let cap=5,rate=1,tok=5,ok=0,no=0,last=performance.now();const log=[];
- const $=id=>document.getElementById(id);
- const rates=[.5,1,1.5,2,3,4,5,6,8,10];
- function upd(){$('rl-capv').textContent=cap;$('rl-ratev').textContent=rate;$('rl-tok').textContent=tok.toFixed(1);$('rl-ok').textContent=ok;$('rl-no').textContent=no;$('rl-fill').style.width=(tok/cap*100)+'%';$('rl-log').innerHTML=log.map(v=>`<i style="background:${v?'var(--ok)':'var(--x)'}" title="${v?'200 OK':'429'}"></i>`).join('')}
- function send(){if(tok>=1){tok-=1;ok++;log.push(1)}else{no++;log.push(0)}if(log.length>40)log.shift();upd()}
- $('rl-cap').oninput=e=>{cap=+e.target.value;tok=Math.min(tok,cap);upd()};
- $('rl-rate').oninput=e=>{rate=rates[+e.target.value-1];upd()};
- $('rl-rate').value=2;rate=1;
- $('rl-one').onclick=send;$('rl-burst').onclick=()=>{for(let i=0;i<10;i++)send()};
- const tick=now=>{const dt=(now-last)/1000;last=now;tok=Math.min(cap,tok+rate*dt);if(labVis['lab-rl']){$('rl-tok').textContent=tok.toFixed(1);$('rl-fill').style.width=(tok/cap*100)+'%'}requestAnimationFrame(tick)};
- upd();requestAnimationFrame(tick)}
-
-// Circuit breaker lab
-{let healthy=true,state='CLOSED',fails=0,openUntil=0,hit=0,ff=0;const log=[];
- const $=id=>document.getElementById(id),SC={CLOSED:['var(--ok)','#0b1433'],OPEN:['var(--x)','#0b1433'],'HALF-OPEN':['var(--w)','#0b1433']};
- function draw(m){const s=$('cb-state');s.textContent=state;s.style.background=SC[state][0];s.style.color=SC[state][1];$('cb-f').textContent=fails;$('cb-hit').textContent=hit;$('cb-ff').textContent=ff;
-   $('cb-log').innerHTML=log.map(v=>`<i style="background:${v==='ok'?'var(--ok)':v==='fail'?'var(--x)':'#5a5f80'}" title="${v}"></i>`).join('');if(m)$('cb-msg').textContent=m}
- $('cb-tog').onclick=e=>{healthy=!healthy;e.target.textContent='Payment API: '+(healthy?'healthy':'failing');e.target.classList.toggle('on',!healthy);draw(healthy?'API fixed. Watch the breaker probe and close.':'API is now failing every call…')};
- setInterval(()=>{if(!labVis['lab-cb']||document.hidden)return;const now=Date.now();let r,m;
-   if(state==='OPEN'){if(now<openUntil){ff++;r='fast';m=`Open: failing fast with a fallback. Probe in ${Math.ceil((openUntil-now)/1000)} s.`}else{state='HALF-OPEN';m='Half-open: sending one trial request…'}}
-   if(!r){hit++;const ok=healthy;r=ok?'ok':'fail';
-     if(state==='HALF-OPEN'){if(ok){state='CLOSED';fails=0;m='Trial succeeded, so the breaker is closed again.'}else{state='OPEN';openUntil=now+4000;m='Trial failed, so the breaker reopens for another 4 s.'}}
-     else if(ok){fails=0;m=m||'Calls are flowing normally.'}
-     else{fails++;m=`Failure ${fails} of 3…`;if(fails>=3){state='OPEN';openUntil=now+4000;m='3 failures in a row: the breaker trips OPEN.'}}}
-   log.push(r);if(log.length>40)log.shift();draw(m)},550);
- draw()}
-}
-}

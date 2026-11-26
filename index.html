@@ -1,110 +1,41 @@
 <!DOCTYPE html>
-<html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Stackline · System design in motion</title>
-<meta name="description" content="Stackline: learn system design through animated diagrams, live labs, case studies and an estimation calculator.">
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stackline</title>
+<meta name="description" content="Stackline: learn system design and AI agent design through short animated lessons, live labs and quick quizzes.">
+<script>try{var p=JSON.parse(localStorage.getItem('stackline-theme')||'"auto"'),h=new Date().getHours();document.documentElement.dataset.theme=p==='auto'?(h>=6&&h<18?'light':'dark'):p}catch(e){document.documentElement.dataset.theme='light'}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@700;800&family=Red+Hat+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="css/style.css">
 </head>
-<body data-track="core">
-<header class="hero band"><div class="wrap">
-  <div class="topbar"><a class="brand" href="./"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect x="3" y="4" width="24" height="6" rx="3" fill="#8c9bff"/><rect x="3" y="12" width="24" height="6" rx="3" fill="#4fc1c6"/><rect x="3" y="20" width="24" height="6" rx="3" fill="#f7e463"/></svg>Stackline</a><nav class="tracks" aria-label="Tracks"><a aria-current="page" href="./">System design</a><a href="agents.html">AI agent design</a></nav></div>
-  <div class="hero-top">
-    <div><h1>System design, in motion</h1></div>
-    <div><p>Every core idea, from load balancers to sagas and real-world case studies, shown as a running system. Watch requests travel and things fail, read what happened step by step, then break it yourself in the live labs.</p>
-    <div class="legend"><span><i style="background:var(--q)"></i>Request</span><span><i style="background:var(--ok)"></i>Success / response</span><span><i style="background:var(--w)"></i>Replication / warning</span><span><i style="background:var(--x)"></i>Failure</span></div></div>
+<body>
+<a class="skip" href="#app">Skip to content</a>
+<header class="top"><div class="top-in">
+  <a class="brand" href="#"><svg width="28" height="28" viewBox="0 0 30 30" aria-hidden="true"><rect x="3" y="4" width="24" height="6" rx="3" fill="#8c9bff"/><rect x="3" y="12" width="24" height="6" rx="3" fill="#4fc1c6"/><rect x="3" y="20" width="24" height="6" rx="3" fill="#f7c948"/></svg>Stackline</a>
+  <nav class="topnav" aria-label="Courses"><a href="#system-design" data-c="system-design">System design</a><a href="#agent-design" data-c="agent-design">AI agent design</a></nav>
+  <div class="tools">
+    <button type="button" class="srch" id="s-open" aria-label="Search lessons"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 13l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Search</span><kbd>Ctrl K</kbd></button>
+    <label class="theme"><span class="vh">Theme</span><select id="theme" aria-label="Theme"><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
   </div>
-  <div class="figc" id="hero-fig"></div>
 </div></header>
 
-<nav class="topics" aria-label="Topics"><div class="scroll" id="nav"></div></nav>
+<main id="app" tabindex="-1"></main>
 
-<main id="main"></main>
-
-<section class="band" id="estimation" style="background:var(--bg2);border-top:1px solid var(--line)"><div class="wrap">
-  <h2>Back-of-the-envelope estimation</h2>
-  <p class="mut" style="max-width:72ch;margin-top:12px;font-size:17px">Most system design interviews start with “how big is this?”. Pick a preset or type your own assumptions. Every result shows the arithmetic, so you can learn the method rather than just read the numbers.</p>
-  <div class="est">
-    <div class="lab">
-      <div class="row" id="est-pre" role="group" aria-label="Presets"></div>
-      <p class="note">Presets are illustrative assumptions for practice, not real company figures.</p>
-      <div class="egrid">
-        <label>Daily active users <span><input type="number" id="e-dau" min="0" step="any"> million</span></label>
-        <label>Requests per user per day <input type="number" id="e-rpu" min="0" step="any"></label>
-        <label>Reads per write <input type="number" id="e-rw" min="0" step="any"></label>
-        <label>Size per write / read <span><input type="number" id="e-sz" min="0" step="any"> KB</span></label>
-        <label>Keep data for <span><input type="number" id="e-yr" min="0" step="any"> years</span></label>
-        <label>Peak ÷ average traffic <input type="number" id="e-pk" min="1" step="any"></label>
-      </div>
-    </div>
-    <div>
-      <div class="tiles" id="est-out"></div>
-      <ol class="math" id="est-math"></ol>
-    </div>
-  </div>
-  <h3 style="font-size:24px;margin-top:40px">Numbers worth memorising</h3>
-  <p class="note" style="margin-top:6px">Rounded orders of magnitude for quick estimates. Real latencies vary a lot with hardware, region and load.</p>
-  <table class="stack"><thead><tr><th>Fact</th><th>Rounded value</th><th>Why it helps</th></tr></thead><tbody>
-    <tr><td>Seconds in a day</td><td>86,400 ≈ 10⁵</td><td>Converts “per day” into “per second” instantly.</td></tr>
-    <tr><td>1 million requests per day</td><td>≈ 12 per second</td><td>Scale up: 100 M/day ≈ 1,200/s.</td></tr>
-    <tr><td>1 KB × 1 million</td><td>1 GB</td><td>Storage per day from writes × size.</td></tr>
-    <tr><td>Main memory read</td><td>~100 nanoseconds</td><td>Why caches are so fast.</td></tr>
-    <tr><td>SSD random read</td><td>~tens to hundreds of microseconds</td><td>Roughly 1,000× slower than memory.</td></tr>
-    <tr><td>Round trip inside one data centre</td><td>~0.5 milliseconds</td><td>Each extra service hop adds up.</td></tr>
-    <tr><td>Round trip across continents</td><td>~100–150 milliseconds</td><td>Why CDNs and regional deployments exist.</td></tr>
-  </tbody></table>
-</div></section>
-
-<section class="band labs" id="labs"><div class="wrap">
-  <h2>Live labs: break it yourself</h2>
-  <p class="mut" style="max-width:70ch;margin-top:12px;font-size:17px">These are real simulations running in your browser. Change the knobs and watch the numbers. You'll remember a failure you caused far longer than one you read about.</p>
-  <div class="labgrid">
-    <div class="lab" id="lab-lb">
-      <h3>Load balancer</h3>
-      <p class="note">Requests stream in continuously. Server C is twice as slow as the others. Switch algorithms, or take servers down, and watch where the work piles up.</p>
-      <div class="row"><label>Algorithm <select id="lb-alg"><option value="rr">Round robin</option><option value="lc">Least connections</option><option value="rnd">Random</option></select></label></div>
-      <div class="srv" id="lb-srv"></div>
-      <div class="stat" id="lb-stat"></div>
-    </div>
-    <div class="lab" id="lab-ch">
-      <h3>Consistent hashing</h3>
-      <p class="note">24 keys on a hash ring. Add or remove a node and compare how many keys must move with consistent hashing and with plain <code>hash % N</code>.</p>
-      <svg class="labsvg" id="ch-svg" viewBox="0 0 400 312" role="img" aria-label="Hash ring with nodes and keys"></svg>
-      <div class="row"><button id="ch-add">Add node</button><button id="ch-rem">Remove node</button><button id="ch-v">Virtual nodes: off</button></div>
-      <div class="stat" id="ch-stat"></div>
-    </div>
-    <div class="lab" id="lab-rl">
-      <h3>Token-bucket rate limiter</h3>
-      <p class="note">Each request spends one token. Tokens refill at a steady rate, up to the bucket's capacity. Try a burst.</p>
-      <div class="row"><label>Capacity <input type="range" id="rl-cap" min="1" max="10" value="5"><strong id="rl-capv">5</strong></label><label>Refill / sec <input type="range" id="rl-rate" min="1" max="10" value="2"><strong id="rl-ratev">1</strong></label></div>
-      <div class="bucket" aria-hidden="true"><i id="rl-fill"></i></div>
-      <div class="stat"><span>Tokens <strong id="rl-tok">5.0</strong></span><span>Allowed <strong id="rl-ok">0</strong></span><span>Rejected (429) <strong id="rl-no">0</strong></span></div>
-      <div class="row"><button id="rl-one">Send 1 request</button><button id="rl-burst">Burst of 10</button></div>
-      <div class="log" id="rl-log" aria-label="Recent results"></div>
-    </div>
-    <div class="lab" id="lab-cb">
-      <h3>Circuit breaker</h3>
-      <p class="note">The order service calls a payment API about twice a second. Make the API fail and watch the breaker trip, fail fast, probe, and recover. It trips after 3 failures and waits 4 s before probing.</p>
-      <div class="row"><button id="cb-tog">Payment API: healthy</button><span class="cbstate" id="cb-state">CLOSED</span></div>
-      <div class="stat"><span>Consecutive failures <strong id="cb-f">0</strong></span><span>Calls reaching the API <strong id="cb-hit">0</strong></span><span>Failed fast <strong id="cb-ff">0</strong></span></div>
-      <div class="log" id="cb-log"></div>
-      <p class="note" id="cb-msg">Calls are flowing normally.</p>
-    </div>
-  </div>
-</div></section>
-
-<section class="band" id="cheatsheet"><div class="wrap">
-  <h2>Quick pick: which tool for which problem</h2>
-  <p class="mut" style="margin-top:12px">A one-screen revision sheet. Each row links to its animation.</p>
-  <table class="stack"><thead><tr><th>When you see this problem…</th><th>Reach for</th><th>Watch out for</th></tr></thead><tbody id="pick"></tbody></table>
-</div></section>
-
-<footer class="band"><div class="wrap">
-  <p><strong style="color:var(--ink)">Stackline</strong> · learn system design by watching it run. <a href="agents.html">AI agent design track</a></p>
-  <p>The diagrams are simplified teaching models. Real systems add retries, timeouts, monitoring and many more parts. Product names are examples of where each idea shows up, and their behaviour changes between versions, so check current docs before relying on specifics.</p>
+<footer class="foot"><div class="wrap">
+  <p><strong>Stackline</strong> · learn system design by watching it run. <a href="https://github.com/rkparupudi/stackline">Source on GitHub</a></p>
+  <p>Diagrams are simplified teaching models. Product names are examples of where each idea shows up; check current documentation before relying on specifics. Your progress is saved only in this browser.</p>
 </div></footer>
 
-<script src="app.js"></script>
-<script src="est.js"></script>
-</body></html>
+<div class="search" id="search" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Search lessons">
+  <div class="s-box"><div class="s-row"><input id="s-in" type="search" placeholder="Search lessons: cache, Raft, RAG…" autocomplete="off" aria-controls="s-res"><button type="button" class="btn sm" id="s-close">Esc</button></div><ul id="s-res" role="listbox"></ul></div>
+</div>
+
+<script src="js/engine.js"></script>
+<script src="js/content.js"></script>
+<script src="js/content-extra.js"></script>
+<script src="js/labs.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,31 +1,35 @@
 # Stackline
 
-**Learn system design by watching it run.**
+**Learn system design by watching it run.** Live site: https://rkparupudi.github.io/stackline/
 
-Stackline is an animated guide to system design, in two tracks:
+Stackline is two short-lesson courses where every idea is an animated, running system:
 
-**System design** (`index.html`)
+- **System design** (30 lessons, 5 modules): foundations, data at scale, services and communication, reliability, and 7 classic case studies.
+- **AI agent design** (7 lessons, 3 modules): the agent loop, RAG, multi-agent orchestration, MCP and tool gateways, agent state, guardrails, and how classic patterns apply to agents.
 
-- **Animated topics:** building blocks (load balancer, caching, CDN, replication, sharding, message queues), distributed concepts (CAP, consistent hashing, rate limiting, Raft leader election), case studies (URL shortener, chat, news feed, ride-hailing, video streaming, payments, autocomplete) and resilience patterns (circuit breaker, retries with backoff, bulkhead, saga).
+Each lesson has:
 
-**AI agent design** (`agents.html`)
+1. A one-line takeaway.
+2. An animation with play/pause, step back/forward and speed controls, plus captions synced to each step.
+3. Key ideas, real-world examples, trade-offs and an interview tip.
+4. A live lab where one fits (load balancer, hash ring, rate limiter, circuit breaker, estimation calculator).
+5. A short quiz with explanations, and “mark complete” progress saved in the browser.
 
-- The agent loop (tool use), RAG, multi-agent orchestration, tool access via MCP and gateways, guardrails and human-in-the-loop, and agent state / durable execution.
-- How classic patterns (queues, idempotency, circuit breakers, rate limits) apply to agents.
+Also: search (Ctrl/Cmd + K or `/`), arrow-key navigation between lessons, and an Auto / Light / Dark theme (Auto is light from 6:00 to 18:00 local time, dark otherwise).
 
-**Both tracks include:**
-- **Step-synced captions:** click any step to jump the animation to that moment.
-- **Live labs:** break a load balancer, resize a hash ring, flood a rate limiter, trip a circuit breaker.
-- **Back-of-the-envelope calculator,** with the arithmetic shown.
-- **Quick-pick cheat sheet:** problem → pattern → what to watch out for.
+## Project layout
 
-## Run locally
-
-Static files with no build step (`style.css` and `app.js` are shared by both pages). Open `index.html` in a browser, or serve the folder:
-
-```bash
-python3 -m http.server
 ```
+index.html            app shell
+css/style.css         styles (light + dark)
+js/engine.js          SVG animation engine
+js/content.js         original lessons (animations + text)
+js/content-extra.js   newer lessons, quizzes, course structure
+js/labs.js            interactive labs
+js/app.js             routing, course/lesson views, quiz, progress, search, theme
+```
+
+No build step. Open `index.html`, or serve the folder with `python3 -m http.server`.
 
 ## Notes
 
